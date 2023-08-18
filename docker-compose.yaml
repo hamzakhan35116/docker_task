@@ -1,0 +1,74 @@
+version: '3'
+services:
+  doc-com:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: doc-com
+    restart: always
+    environment:
+      MONGODB_URI: mongodb://mongodb:27017
+    networks:
+      - custom_network
+    depends_on:
+      - mongodb
+      - redis
+      - mysql_container
+
+  mongodb:
+    build:
+      context: ./nodeMongo/MongoDocker
+      dockerfile: Dockerfile
+    container_name: mongodb
+    restart: always
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: rootpassword
+    volumes:
+      - mongodb-data:/data/db
+    networks:
+      - custom_network
+
+  nginx:
+    image: nginx:latest
+    container_name: nginx
+    ports:
+      - "100:100"
+    volumes:
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    networks:
+      - custom_network
+    depends_on:
+      - doc-com
+
+  custom-postgres:
+    build:
+      context: ./laravel/postgre
+      dockerfile: Dockerfile
+    container_name: custom-postgres
+    restart: always
+    networks:
+      - custom_network
+
+  mysql_container:
+    build:
+      context: ./pythonsetup/mysql
+      dockerfile: Dockerfile
+    container_name: mysql_container
+    restart: always
+    networks:
+      - custom_network
+
+  redis:
+    image: redis:latest
+    container_name: redis
+    restart: always
+    networks:
+      - custom_network
+
+networks:
+  custom_network:
+
+volumes:
+  mongodb-data:
+
